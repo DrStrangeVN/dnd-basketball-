@@ -1,25 +1,17 @@
 "use client";
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import type { DrillCardData } from "@/lib/types";
-import { useLanguage, pick } from "@/lib/i18n";
+import type { Drill } from "@/lib/types";
 import { DrillCard } from "@/components/cards";
 
-const SKILLS: { en: string; vi: string }[] = [
-  { en: "Ball Handling", vi: "Dẫn bóng" },
-  { en: "Shooting", vi: "Ném rổ" },
-  { en: "Finishing", vi: "Dứt điểm" },
-  { en: "Passing", vi: "Chuyền bóng" },
-  { en: "Footwork", vi: "Footwork" },
-  { en: "Defense", vi: "Phòng thủ" },
-  { en: "Rebounding", vi: "Bắt bóng bật bảng" },
-  { en: "Offense", vi: "Tấn công" },
-  { en: "Transition", vi: "Chuyển đổi" },
-  { en: "Competition", vi: "Thi đấu" },
-  { en: "Conditioning", vi: "Thể lực" },
-];
+const SKILLS = ["Ball Handling", "Shooting", "Finishing", "Passing", "Footwork", "Defense", "Rebounding", "Offense", "Transition", "Competition", "Conditioning"];
 const LEVELS = ["beginner", "intermediate", "advanced", "elite"];
 const INTENSITIES = ["low", "medium", "high"];
+const DURATIONS = [
+  { label: "≤ 10 min", max: 10 },
+  { label: "≤ 15 min", max: 15 },
+  { label: "Any", max: 999 },
+];
 
 function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -30,19 +22,12 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
   );
 }
 
-export default function DrillFilters({ drills }: { drills: DrillCardData[] }) {
+export default function DrillFilters({ drills }: { drills: Drill[] }) {
   const [q, setQ] = useState("");
   const [skill, setSkill] = useState<string | null>(null);
   const [level, setLevel] = useState<string | null>(null);
   const [intensity, setIntensity] = useState<string | null>(null);
   const [dur, setDur] = useState(999);
-  const { lang, t } = useLanguage();
-
-  const DURATIONS = [
-    { label: `≤ 10 ${t("common.minutes")}`, max: 10 },
-    { label: `≤ 15 ${t("common.minutes")}`, max: 15 },
-    { label: t("drills.anyDuration"), max: 999 },
-  ];
 
   const filtered = useMemo(() => drills.filter((d) => {
     if (skill && d.skill !== skill) return false;
@@ -50,47 +35,46 @@ export default function DrillFilters({ drills }: { drills: DrillCardData[] }) {
     if (intensity && d.intensity !== intensity) return false;
     if (d.durationMin > dur) return false;
     if (q.trim()) {
-      const needle = q.trim().toLowerCase();
-      const hay = (d.title + " " + d.description + " " + d.skill + " " + (d.vi?.title ?? "") + " " + (d.vi?.description ?? "")).toLowerCase();
-      if (!hay.includes(needle)) return false;
+      const t = q.trim().toLowerCase();
+      if (!(d.title + " " + d.description + " " + d.skill).toLowerCase().includes(t)) return false;
     }
     return true;
   }), [drills, q, skill, level, intensity, dur]);
 
-  const skills = SKILLS.filter((s) => drills.some((d) => d.skill === s.en));
+  const skills = SKILLS.filter((s) => drills.some((d) => d.skill === s));
 
   return (
     <div>
       <div className="neu mb-6 space-y-4 p-5 sm:p-6">
         <div className="neu-input flex items-center gap-2 px-4 py-2.5">
           <Search className="h-4 w-4 shrink-0 text-[color:var(--faint)]" aria-hidden />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("drills.searchPlaceholder")}
-            aria-label={t("drills.title")} className="w-full bg-transparent text-sm outline-none placeholder:text-[color:var(--faint)]" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search drills…"
+            aria-label="Search drills" className="w-full bg-transparent text-sm outline-none placeholder:text-[color:var(--faint)]" />
         </div>
         <div>
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--faint)]">{t("drills.filter.skill")}</p>
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--faint)]">Skill</p>
           <div className="flex flex-wrap gap-2">
-            <Chip active={!skill} onClick={() => setSkill(null)}>{t("drills.filter.all")}</Chip>
-            {skills.map((s) => <Chip key={s.en} active={skill === s.en} onClick={() => setSkill(skill === s.en ? null : s.en)}>{pick(lang, s.en, s.vi)}</Chip>)}
+            <Chip active={!skill} onClick={() => setSkill(null)}>All</Chip>
+            {skills.map((s) => <Chip key={s} active={skill === s} onClick={() => setSkill(skill === s ? null : s)}>{s}</Chip>)}
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--faint)]">{t("drills.filter.level")}</p>
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--faint)]">Level</p>
             <div className="flex flex-wrap gap-2">
-              <Chip active={!level} onClick={() => setLevel(null)}>{t("drills.filter.all")}</Chip>
-              {LEVELS.map((l) => <Chip key={l} active={level === l} onClick={() => setLevel(level === l ? null : l)}>{t(`article.level.${l}`)}</Chip>)}
+              <Chip active={!level} onClick={() => setLevel(null)}>All</Chip>
+              {LEVELS.map((l) => <Chip key={l} active={level === l} onClick={() => setLevel(level === l ? null : l)}>{l}</Chip>)}
             </div>
           </div>
           <div>
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--faint)]">{t("drills.intensity")}</p>
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--faint)]">Intensity</p>
             <div className="flex flex-wrap gap-2">
-              <Chip active={!intensity} onClick={() => setIntensity(null)}>{t("drills.filter.all")}</Chip>
-              {INTENSITIES.map((i) => <Chip key={i} active={intensity === i} onClick={() => setIntensity(intensity === i ? null : i)}>{t(`drills.intensity.${i}`)}</Chip>)}
+              <Chip active={!intensity} onClick={() => setIntensity(null)}>All</Chip>
+              {INTENSITIES.map((i) => <Chip key={i} active={intensity === i} onClick={() => setIntensity(intensity === i ? null : i)}>{i}</Chip>)}
             </div>
           </div>
           <div>
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--faint)]">{t("drills.duration")}</p>
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--faint)]">Duration</p>
             <div className="flex flex-wrap gap-2">
               {DURATIONS.map((d) => <Chip key={d.label} active={dur === d.max} onClick={() => setDur(d.max)}>{d.label}</Chip>)}
             </div>
@@ -99,11 +83,11 @@ export default function DrillFilters({ drills }: { drills: DrillCardData[] }) {
       </div>
 
       <p className="mb-4 px-1 text-sm text-[color:var(--muted)]" role="status">
-        {filtered.length} {t("drills.countLabel")}
+        {filtered.length} drill{filtered.length === 1 ? "" : "s"}
       </p>
       {filtered.length === 0 ? (
         <div className="neu p-10 text-center text-sm text-[color:var(--muted)]">
-          {t("drills.noMatch")}
+          No drills match these filters. Try widening your selection.
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
