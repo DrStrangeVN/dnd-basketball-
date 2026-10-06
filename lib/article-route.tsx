@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getAllArticles, getArticleBySlug, articleUrl, getRelatedArticles, getDrillsForArticle, type Article } from "./content";
+import { getAllArticles, getArticleBySlug, articleUrl, type Article } from "./content";
 import { hubById } from "./hubs";
-import { toArticleCard, toDrillCard } from "./types";
 import ArticleView from "@/components/ArticleView";
 import RecentTracker from "@/components/RecentTracker";
 
@@ -10,27 +9,24 @@ const SITE = "https://dndbasketball.vercel.app";
 
 function metadataFor(a: Article): Metadata {
   const url = `${SITE}${articleUrl(a)}`;
-  const title = a.vi?.title ?? a.title;
-  const desc = a.vi?.description ?? a.description;
-  const fullTitle = `${title} | DND Basketball`;
+  const title = a.title;
+  const fullTitle = `${a.title} | DND Basketball`;
   return {
     title,
-    description: desc,
+    description: a.description,
     alternates: { canonical: url },
     openGraph: {
-      title: fullTitle, description: desc, url, type: "article", siteName: "DND Basketball",
+      title: fullTitle, description: a.description, url, type: "article", siteName: "DND Basketball",
     },
-    twitter: { card: "summary", title: fullTitle, description: desc },
+    twitter: { card: "summary", title: fullTitle, description: a.description },
   };
 }
 
 function PageShell({ article }: { article: Article }) {
-  const related = getRelatedArticles(article, 4).map(toArticleCard);
-  const drills = getDrillsForArticle(article, 3).map(toDrillCard);
   return (
     <>
-      <ArticleView article={article} related={related} drills={drills} />
-      <RecentTracker item={{ type: "article", id: article.slug, title: article.vi?.title ?? article.title, url: articleUrl(article), ts: 0 }} />
+      <ArticleView article={article} />
+      <RecentTracker item={{ type: "article", id: article.slug, title: article.title, url: articleUrl(article), ts: 0 }} />
     </>
   );
 }
@@ -86,12 +82,11 @@ export function createSkillRoute() {
 export function hubMetadata(hubId: string): Metadata {
   const h = hubById(hubId);
   if (!h) return { title: "DND Basketball" };
-  const title = `${h.titleVi ?? h.title} — ${h.taglineVi ?? h.tagline}`;
-  const desc = h.descriptionVi ?? h.description;
+  const title = `${h.title} — ${h.tagline}`;
   return {
     title,
-    description: desc,
+    description: h.description,
     alternates: { canonical: `${SITE}${h.route}` },
-    openGraph: { title: `${title} | DND Basketball`, description: desc, url: `${SITE}${h.route}`, siteName: "DND Basketball" },
+    openGraph: { title: `${title} | DND Basketball`, description: h.description, url: `${SITE}${h.route}`, siteName: "DND Basketball" },
   };
 }
